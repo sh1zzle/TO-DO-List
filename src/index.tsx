@@ -64,7 +64,7 @@ const App = () => {
             {todo.text}
             <FontAwesomeIcon
               onClick={(e) => {
-                e.stopPropagation(); // Prevents triggering toggleDone
+                e.stopPropagation();
                 removeTodo(index);
               }}
               icon={faTrashCan}
