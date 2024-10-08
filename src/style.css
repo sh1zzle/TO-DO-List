@@ -64,6 +64,20 @@ h1 {
 
 .todo-item {
   display: flex;
-  flex-direction: row;
   justify-content: space-between;
+  align-items: center;
+  padding-left: 50px;
+  cursor: pointer;
+  padding-right: 50px;
+  padding-top: 10px;
+}
+
+.todo-item.done {
+  text-decoration: line-through;
+  color: gray;
+}
+
+.delete-icon {
+  margin-left: 10px;
+  cursor: pointer;
 }
