@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
 
 interface Todo {
+  id: number;
   text: string;
   done: boolean;
 }
@@ -15,6 +16,19 @@ const App = () => {
     return savedTodos ? JSON.parse(savedTodos) : [];
   });
   const [input, setInput] = useState('');
+  const [nextID, setNextID] = useState<number>(() => {
+    const savedTodos = localStorage.getItem('todos');
+    const parsedTodos = savedTodos ? JSON.parse(savedTodos) : [];
+    const maxID =
+      parsedTodos.length > 0
+        ? Math.max(...parsedTodos.map((todo: Todo) => todo.id))
+        : 0;
+    return maxID + 1;
+  });
+
+  console.log('nextID: ', nextID);
+
+  console.log('todos: ', todos);
 
   useEffect(() => {
     localStorage.setItem('todos', JSON.stringify(todos));
@@ -22,19 +36,20 @@ const App = () => {
 
   const addToDo = () => {
     if (input.trim()) {
-      setToDos([...todos, { text: input, done: false }]);
+      setToDos([...todos, { id: nextID, text: input, done: false }]);
       setInput('');
+      setNextID((prev) => prev + 1);
     }
   };
 
-  const removeTodo = (index: number) => {
-    const newTodos = todos.filter((_, i) => i !== index);
+  const removeTodo = (id: number) => {
+    const newTodos = todos.filter((todo) => todo.id !== id);
     setToDos(newTodos);
   };
 
-  const toggleDone = (index: number) => {
-    const newTodos = todos.map((todo, i) =>
-      i === index ? { ...todo, done: !todo.done } : todo
+  const toggleDone = (id: number) => {
+    const newTodos = todos.map((todo) =>
+      todo.id === id ? { ...todo, done: !todo.done } : todo
     );
     setToDos(newTodos);
   };
@@ -55,17 +70,17 @@ const App = () => {
         </button>
       </div>
       <ul className='todo-list'>
-        {todos.map((todo, index) => (
+        {todos.map((todo) => (
           <li
-            key={index}
+            key={todo.id}
             className={`todo-item ${todo.done ? 'done' : ''}`}
-            onClick={() => toggleDone(index)}
+            onClick={() => toggleDone(todo.id)}
           >
             {todo.text}
             <FontAwesomeIcon
               onClick={(e) => {
                 e.stopPropagation();
-                removeTodo(index);
+                removeTodo(todo.id);
               }}
               icon={faTrashCan}
               className='delete-icon'
