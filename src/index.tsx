@@ -26,32 +26,31 @@ const App = () => {
     return maxID + 1;
   });
 
-  console.log('nextID: ', nextID);
-
-  console.log('todos: ', todos);
-
   useEffect(() => {
     localStorage.setItem('todos', JSON.stringify(todos));
   }, [todos]);
 
   const addToDo = () => {
     if (input.trim()) {
-      setToDos([...todos, { id: nextID, text: input, done: false }]);
+      setToDos((prevTodos) => [
+        ...prevTodos,
+        { id: nextID, text: input, done: false },
+      ]);
       setInput('');
       setNextID((prev) => prev + 1);
     }
   };
 
   const removeTodo = (id: number) => {
-    const newTodos = todos.filter((todo) => todo.id !== id);
-    setToDos(newTodos);
+    setToDos((prevTodos) => prevTodos.filter((todo) => todo.id !== id));
   };
 
   const toggleDone = (id: number) => {
-    const newTodos = todos.map((todo) =>
-      todo.id === id ? { ...todo, done: !todo.done } : todo
+    setToDos((prevTodos) =>
+      prevTodos.map((todo) =>
+        todo.id === id ? { ...todo, done: !todo.done } : todo
+      )
     );
-    setToDos(newTodos);
   };
 
   return (
