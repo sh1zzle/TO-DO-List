@@ -54,24 +54,24 @@ const App = () => {
   };
 
   return (
-    <div className='max-w-[500px] mx-auto my-12 p-5 bg-gray-100 rounded-lg shadow-lg text-center font-sans'>
-      <h1 className='font-bold mb-5 text-3xl text-teal-700'>My To-Do List</h1>
-      <div className='flex justify-center mb-5'>
+    <div className="max-w-[500px] mx-auto my-12 p-5 bg-gray-100 rounded-lg shadow-lg text-center font-sans">
+      <h1 className="font-bold mb-5 text-3xl text-teal-700">My To-Do List</h1>
+      <div className="flex justify-center mb-5">
         <input
-          type='text'
+          type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder='Enter a new task'
-          className='p-[10px] text-base rounded-[5px] border border-gray-300 w-[70%] mr-[10px] outline-none transition-colors duration-200 focus:border-blue-500'
+          placeholder="Enter a new task"
+          className="p-[10px] text-base rounded-[5px] border border-gray-300 w-[70%] mr-[10px] outline-none transition-colors duration-200 focus:border-blue-500"
         />
         <button
           onClick={addToDo}
-          className='px-5 py-2.5 bg-[#81abda] text-white border-none rounded-[5px] cursor-pointer text-base transition-colors duration-200 hover:bg-[#0056b3]'
+          className="px-5 py-2.5 bg-[#81abda] text-white border-none rounded-[5px] cursor-pointer text-base transition-colors duration-200 hover:bg-[#0056b3]"
         >
           Add
         </button>
       </div>
-      <ul className='list-none p-0 flex flex-col'>
+      <ul className="list-none p-0 flex flex-col">
         {todos.map((todo) => (
           <li
             key={todo.id}
@@ -87,7 +87,7 @@ const App = () => {
                 removeTodo(todo.id);
               }}
               icon={faTrashCan}
-              className='ml-[10px] cursor-pointer'
+              className="ml-[10px] cursor-pointer"
             />
           </li>
         ))}

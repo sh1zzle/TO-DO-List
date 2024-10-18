@@ -1,0 +1,38 @@
+name: CI
+
+# Trigger the workflow on push or pull request to the main branch
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js environment (choose the Node.js version that matches your project)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16' # You can change this to the version you need
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Run Prettier to check code formatting
+      - name: Run Prettier
+        run: npm run prettier-check
+
+      # Step 5: Run ESLint to check code quality
+      - name: Run ESLint
+        run: npm run lint
+
+      # Step 6: Run Vitest for unit tests
+      - name: Run Vitest tests
+        run: npm run test:ci
