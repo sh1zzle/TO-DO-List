@@ -10,6 +10,6 @@
     "outDir": "./dist",
     "moduleResolution": "node"
   },
-  "include": ["src/**/*"], // Ensure it includes your src folder
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

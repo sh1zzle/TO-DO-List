@@ -13,12 +13,11 @@ export default [
   {
     ...pluginReact.configs.flat.recommended,
     rules: {
-      // Disable the 'React must be in scope' rule
       'react/react-in-jsx-scope': 'off',
     },
     settings: {
       react: {
-        version: 'detect', // Automatically detect React version
+        version: 'detect',
       },
     },
   },

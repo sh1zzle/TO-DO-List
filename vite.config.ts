@@ -1,17 +1,14 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react'; // Import React plugin if using React
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   server: {
-    port: 3000, // The port the dev server will run on
-    open: true, // Automatically open the app in the browser
+    port: 3000,
+    open: true,
   },
   build: {
-    outDir: 'dist', // The output directory for the build
-    sourcemap: true, // Generate sourcemaps for debugging
+    outDir: 'dist',
+    sourcemap: true,
   },
-  plugins: [
-    react(), // Use the React plugin if applicable
-    // Add any additional Vite plugins here
-  ],
+  plugins: [react()],
 });
