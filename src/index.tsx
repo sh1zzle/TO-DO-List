@@ -1,56 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import './style.css';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
 
-interface Todo {
-  id: number;
-  text: string;
-  done: boolean;
-}
+import { useTodo } from './useTodo';
 
 const App = () => {
-  const [todos, setToDos] = useState<Todo[]>(() => {
-    const savedTodos = localStorage.getItem('todos');
-    return savedTodos ? JSON.parse(savedTodos) : [];
-  });
-  const [input, setInput] = useState('');
-  const [nextID, setNextID] = useState<number>(() => {
-    const savedTodos = localStorage.getItem('todos');
-    const parsedTodos = savedTodos ? JSON.parse(savedTodos) : [];
-    const maxID =
-      parsedTodos.length > 0
-        ? Math.max(...parsedTodos.map((todo: Todo) => todo.id))
-        : 0;
-    return maxID + 1;
-  });
+  const {
+    todos,
+    addTodo,
+    removeTodo,
+    toggleDone,
+    input,
+    setInput,
+    getTodos,
+    loading,
+  } = useTodo();
 
   useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
-  }, [todos]);
+    const loadTodos = async () => {
+      try {
+        await getTodos();
+      } catch (error) {
+        console.error('Error loading todos:', error);
+      }
+    };
 
-  const addToDo = () => {
-    if (input.trim()) {
-      setToDos((prevTodos) => [
-        ...prevTodos,
-        { id: nextID, text: input, done: false },
-      ]);
+    loadTodos();
+  }, []);
+
+  const handleAddTodo = async () => {
+    if (!input.trim()) return;
+    try {
+      await addTodo(input);
       setInput('');
-      setNextID((prev) => prev + 1);
+    } catch (error) {
+      console.error('Error adding todo:', error);
     }
-  };
-
-  const removeTodo = (id: number) => {
-    setToDos((prevTodos) => prevTodos.filter((todo) => todo.id !== id));
-  };
-
-  const toggleDone = (id: number) => {
-    setToDos((prevTodos) =>
-      prevTodos.map((todo) =>
-        todo.id === id ? { ...todo, done: !todo.done } : todo
-      )
-    );
   };
 
   return (
@@ -63,12 +50,14 @@ const App = () => {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Enter a new task"
           className="p-[10px] text-base rounded-[5px] border border-gray-300 w-[70%] mr-[10px] outline-none transition-colors duration-200 focus:border-blue-500"
+          disabled={loading}
         />
         <button
-          onClick={addToDo}
+          onClick={handleAddTodo}
           className="px-5 py-2.5 bg-[#81abda] text-white border-none rounded-[5px] cursor-pointer text-base transition-colors duration-200 hover:bg-[#0056b3]"
+          disabled={loading}
         >
-          Add
+          {loading ? 'Adding...' : 'Add'}
         </button>
       </div>
       <ul className="list-none p-0 flex flex-col">
