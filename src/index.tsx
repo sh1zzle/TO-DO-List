@@ -30,6 +30,20 @@ const App = () => {
     loadTodos();
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handleAddTodo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [input]);
+
   const handleAddTodo = async () => {
     if (!input.trim()) return;
     try {
@@ -54,12 +68,15 @@ const App = () => {
         />
         <button
           onClick={handleAddTodo}
-          className="px-5 py-2.5 bg-[#81abda] text-white border-none rounded-[5px] cursor-pointer text-base transition-colors duration-200 hover:bg-[#0056b3]"
-          disabled={loading}
+          className={`px-5 py-2.5 text-white border-none rounded-[5px] cursor-pointer text-base transition-colors duration-200 ${
+            input.length > 0 ? 'bg-[#0056b3]' : 'bg-gray-300'
+          }`}
+          disabled={loading || input.length === 0}
         >
           {loading ? 'Adding...' : 'Add'}
         </button>
       </div>
+
       <ul className="list-none p-0 flex flex-col">
         {todos.map((todo) => (
           <li
@@ -76,7 +93,7 @@ const App = () => {
                 removeTodo(todo.id);
               }}
               icon={faTrashCan}
-              className="ml-[10px] cursor-pointer"
+              className="ml-[10px] cursor-pointer p-2 rounded-full bg-gray-200 hover:bg-red-500 transition-colors duration-200 text-gray-700 hover:text-white"
             />
           </li>
         ))}
