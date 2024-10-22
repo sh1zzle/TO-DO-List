@@ -32,41 +32,38 @@ export const useTodo = () => {
     localStorage.setItem('todos', JSON.stringify(todos));
   }, [todos]);
 
-  // Fetch todos from localStorage
   const getTodos = async (): Promise<Todo[]> => {
-    await sleep(1000); // Simulate a delay
+    await sleep(1000);
     const storedTodos = localStorage.getItem('todos');
     const todos = storedTodos ? JSON.parse(storedTodos) : [];
-    setToDos(todos); // This will still update local state but not necessary anymore.
+    setToDos(todos);
     return todos;
   };
 
-  // Add a new todo and return the updated list
-  const addTodo = async (text: string): Promise<Todo[]> => {
+  const addTodo = async (text: string): Promise<Todo> => {
     if (text.trim()) {
       await sleep(1000);
-      const newTodo = { id: nextID, text, done: false };
+      const newTodo: Todo = { id: nextID, text, done: false };
       const updatedTodos = [...todos, newTodo];
       setToDos(updatedTodos);
       setNextID((prev) => prev + 1);
-      return updatedTodos;
+      return newTodo;
     }
-    return todos;
+    throw new Error('Todo text cannot be empty');
   };
 
-  // Remove a todo by its id
-  const removeTodo = async (id: number): Promise<Todo[]> => {
+  const removeTodo = async (id: number): Promise<void> => {
     const updatedTodos = todos.filter((todo) => todo.id !== id);
     setToDos(updatedTodos);
-    return updatedTodos; // Return the updated list
+    localStorage.setItem('todos', JSON.stringify(updatedTodos));
   };
 
-  const toggleDone = async (id: number): Promise<Todo[]> => {
+  const toggleDone = async (id: number): Promise<void> => {
     const updatedTodos = todos.map((todo) =>
       todo.id === id ? { ...todo, done: !todo.done } : todo
     );
     setToDos(updatedTodos);
-    return updatedTodos; // Return the updated list
+    localStorage.setItem('todos', JSON.stringify(updatedTodos));
   };
 
   return {
