@@ -7,12 +7,12 @@ interface Todo {
 }
 
 export const useTodo = () => {
+  const [input, setInput] = useState<string>('');
   const [todos, setToDos] = useState<Todo[]>(() => {
     const savedTodos = localStorage.getItem('todos');
     return savedTodos ? JSON.parse(savedTodos) : [];
   });
 
-  const [input, setInput] = useState('');
   const [nextID, setNextID] = useState<number>(() => {
     const savedTodos = localStorage.getItem('todos');
     const parsedTodos = savedTodos ? JSON.parse(savedTodos) : [];
@@ -22,49 +22,51 @@ export const useTodo = () => {
         : 0;
     return maxID + 1;
   });
-  const [loading, setLoading] = useState(false);
 
   const sleep = (ms: number) => {
     return new Promise((resolve) => setTimeout(resolve, ms));
   };
 
+  // Save todos to localStorage when they change
   useEffect(() => {
     localStorage.setItem('todos', JSON.stringify(todos));
   }, [todos]);
 
-  const getTodos = async (): Promise<void> => {
-    setLoading(true);
-    await sleep(3000);
+  // Fetch todos from localStorage
+  const getTodos = async (): Promise<Todo[]> => {
+    await sleep(1000); // Simulate a delay
     const storedTodos = localStorage.getItem('todos');
-    if (storedTodos) {
-      setToDos(JSON.parse(storedTodos));
-    }
-    setLoading(false);
+    const todos = storedTodos ? JSON.parse(storedTodos) : [];
+    setToDos(todos); // This will still update local state but not necessary anymore.
+    return todos;
   };
 
-  const addTodo = async (text: string): Promise<void> => {
+  // Add a new todo and return the updated list
+  const addTodo = async (text: string): Promise<Todo[]> => {
     if (text.trim()) {
-      setLoading(true); // Start loading when adding
-      await sleep(1000); // Simulate delay
-      setToDos((prevTodos) => [
-        ...prevTodos,
-        { id: nextID, text, done: false },
-      ]);
+      await sleep(1000);
+      const newTodo = { id: nextID, text, done: false };
+      const updatedTodos = [...todos, newTodo];
+      setToDos(updatedTodos);
       setNextID((prev) => prev + 1);
-      setLoading(false); // Stop loading after adding
+      return updatedTodos;
     }
+    return todos;
   };
 
-  const removeTodo = (id: number) => {
-    setToDos((prevTodos) => prevTodos.filter((todo) => todo.id !== id));
+  // Remove a todo by its id
+  const removeTodo = async (id: number): Promise<Todo[]> => {
+    const updatedTodos = todos.filter((todo) => todo.id !== id);
+    setToDos(updatedTodos);
+    return updatedTodos; // Return the updated list
   };
 
-  const toggleDone = (id: number) => {
-    setToDos((prevTodos) =>
-      prevTodos.map((todo) =>
-        todo.id === id ? { ...todo, done: !todo.done } : todo
-      )
+  const toggleDone = async (id: number): Promise<Todo[]> => {
+    const updatedTodos = todos.map((todo) =>
+      todo.id === id ? { ...todo, done: !todo.done } : todo
     );
+    setToDos(updatedTodos);
+    return updatedTodos; // Return the updated list
   };
 
   return {
@@ -72,9 +74,8 @@ export const useTodo = () => {
     addTodo,
     removeTodo,
     toggleDone,
+    getTodos,
     input,
     setInput,
-    loading,
-    getTodos,
   };
 };
