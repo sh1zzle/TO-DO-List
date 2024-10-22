@@ -5,18 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
 
 import { useTodo } from './useTodo';
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  UseMutationResult,
-} from '@tanstack/react-query';
-
-interface Todo {
-  id: number;
-  text: string;
-  done: boolean;
-}
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const App = () => {
   const { addTodo, removeTodo, toggleDone, getTodos, input, setInput } =
