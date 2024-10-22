@@ -56,7 +56,7 @@ const App = () => {
   });
 
   const toggleTodoMutation = useMutation<void, Error, number>({
-    mutationFn: (id) => toggleDone(id), // Assuming toggleDone is updated to return void
+    mutationFn: (id) => toggleDone(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] });
     },
@@ -66,19 +66,19 @@ const App = () => {
   });
 
   const removeTodoMutation = useMutation<void, Error, number>({
-    mutationFn: (id) => removeTodo(id), // Call the updated removeTodo function
+    mutationFn: (id) => removeTodo(id),
     onMutate: () => {
-      setRemoveLoading(true); // Set remove loading to true
+      setRemoveLoading(true);
       setTimeout(() => {
-        setRemoveLoading(false); // Clear loading state after 3 seconds
+        setRemoveLoading(false);
       }, 3000);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todos'] }); // Invalidate to refetch
+      queryClient.invalidateQueries({ queryKey: ['todos'] });
     },
     onError: (error) => {
       console.error('Error removing todo:', error);
-      setRemoveLoading(false); // Clear loading state on error
+      setRemoveLoading(false);
     },
   });
 
@@ -116,7 +116,7 @@ const App = () => {
                 todo.done ? 'line-through text-gray-500' : ''
               }`}
               onClick={() => {
-                toggleTodoMutation.mutate(todo.id); // Use toggle mutation
+                toggleTodoMutation.mutate(todo.id);
               }}
             >
               {todo.text}
@@ -127,7 +127,7 @@ const App = () => {
                   <FontAwesomeIcon
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeTodoMutation.mutate(todo.id); // Use remove mutation
+                      removeTodoMutation.mutate(todo.id);
                     }}
                     icon={faTrashCan}
                     className="ml-[10px] cursor-pointer p-2 rounded-full bg-gray-200 hover:bg-red-500 transition-colors duration-200 text-gray-700 hover:text-white"

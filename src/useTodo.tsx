@@ -27,7 +27,6 @@ export const useTodo = () => {
     return new Promise((resolve) => setTimeout(resolve, ms));
   };
 
-  // Save todos to localStorage when they change
   useEffect(() => {
     localStorage.setItem('todos', JSON.stringify(todos));
   }, [todos]);
