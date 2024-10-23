@@ -32,12 +32,31 @@ export const useTodo = () => {
   }, [todos]);
 
   const getTodos = async (): Promise<Todo[]> => {
-    await sleep(1000);
-    const storedTodos = localStorage.getItem('todos');
-    const todos = storedTodos ? JSON.parse(storedTodos) : [];
-    setToDos(todos);
-    return todos;
+    try {
+      await sleep(1000);
+      const storedTodos = localStorage.getItem('todos');
+
+      if (!storedTodos) {
+        throw new Error('No todos found in localStorage');
+      }
+
+      const todos = JSON.parse(storedTodos);
+      setToDos(todos);
+
+      return todos;
+    } catch (error) {
+      console.error('Error fetching todos:', error);
+      throw error;
+    }
   };
+
+  //Testing error state in fetching
+  // const getTodos = async (): Promise<Todo[]> => {
+  //   // Simulate an error
+  //   throw new Error('Simulated error fetching todos');
+  //   // Your actual fetching logic would be here
+  //   // return fetchTodosFromAPI();
+  // };
 
   const addTodo = async (text: string): Promise<Todo> => {
     if (text.trim()) {
@@ -51,18 +70,51 @@ export const useTodo = () => {
     throw new Error('Todo text cannot be empty');
   };
 
+  //Testing error state in adding
+  // const addTodo = async (text: string): Promise<Todo> => {
+  //   throw new Error('Simulated error adding todo');
+  // };
+
   const removeTodo = async (id: number): Promise<void> => {
-    const updatedTodos = todos.filter((todo) => todo.id !== id);
-    setToDos(updatedTodos);
-    localStorage.setItem('todos', JSON.stringify(updatedTodos));
+    try {
+      setToDos((prevTodos) => {
+        const updatedTodos = prevTodos.filter((todo) => todo.id !== id);
+
+        if (updatedTodos.length === prevTodos.length) {
+          console.error('Todo not found, no update performed');
+          return prevTodos;
+        }
+
+        localStorage.setItem('todos', JSON.stringify(updatedTodos));
+        console.log('updatedTodos: ', updatedTodos);
+        return updatedTodos;
+      });
+    } catch (error) {
+      console.error('Error removing todo:', error);
+      throw error;
+    }
   };
 
   const toggleDone = async (id: number): Promise<void> => {
-    const updatedTodos = todos.map((todo) =>
-      todo.id === id ? { ...todo, done: !todo.done } : todo
-    );
-    setToDos(updatedTodos);
-    localStorage.setItem('todos', JSON.stringify(updatedTodos));
+    try {
+      setToDos((prevTodos) => {
+        const todoExists = prevTodos.some((todo) => todo.id === id);
+
+        if (!todoExists) {
+          throw new Error('Todo not found');
+        }
+
+        const updatedTodos = prevTodos.map((todo) =>
+          todo.id === id ? { ...todo, done: !todo.done } : todo
+        );
+
+        localStorage.setItem('todos', JSON.stringify(updatedTodos));
+        return updatedTodos;
+      });
+    } catch (error) {
+      console.error('Error toggling todo:', error);
+      throw error;
+    }
   };
 
   return {

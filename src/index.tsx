@@ -20,6 +20,12 @@ const App = () => {
 
   const [removeLoading, setRemoveLoading] = useState(false);
 
+  const handleAddTodo = () => {
+    if (!input.trim()) return;
+    addTodoMutation.mutate(input);
+    setInput('');
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
@@ -32,33 +38,34 @@ const App = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [input]);
+  }, [handleAddTodo]);
 
   const addTodoMutation = useMutation<Todo, Error, string>({
     mutationFn: addTodo,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
+      queryClient.invalidateQueries({ queryKey });
     },
     onError: (error) => {
       console.error('Error adding todo:', error);
     },
   });
 
-  const handleAddTodo = () => {
-    if (!input.trim()) return;
-    addTodoMutation.mutate(input);
-    setInput('');
-  };
+  const queryKey = ['todos'];
 
-  const { data: todos, isPending: isTodosLoading } = useQuery({
+  const {
+    data: todos,
+    isPending: isTodosLoading,
+    isError: isTodosError,
+    error: todosError,
+  } = useQuery({
     queryFn: () => getTodos(),
-    queryKey: ['todos'],
+    queryKey,
   });
 
   const toggleTodoMutation = useMutation<void, Error, number>({
     mutationFn: (id) => toggleDone(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
+      queryClient.invalidateQueries({ queryKey });
     },
     onError: (error) => {
       console.error('Error toggling todo:', error);
@@ -67,14 +74,9 @@ const App = () => {
 
   const removeTodoMutation = useMutation<void, Error, number>({
     mutationFn: (id) => removeTodo(id),
-    onMutate: () => {
-      setRemoveLoading(true);
-      setTimeout(() => {
-        setRemoveLoading(false);
-      }, 3000);
-    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
+      queryClient.invalidateQueries({ queryKey });
+      setRemoveLoading(false);
     },
     onError: (error) => {
       console.error('Error removing todo:', error);
@@ -105,6 +107,13 @@ const App = () => {
           {addTodoMutation.isPending === true ? 'Adding' : 'Add'}
         </button>
       </div>
+
+      {isTodosError && (
+        <div className="text-red-500 mb-3">
+          Error loading todos: {todosError?.message}
+        </div>
+      )}
+
       {isTodosLoading ? (
         <div>Loading todos...</div>
       ) : (
@@ -127,11 +136,27 @@ const App = () => {
                   <FontAwesomeIcon
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeTodoMutation.mutate(todo.id);
+                      if (
+                        !removeTodoMutation.isPending &&
+                        todos.some((t) => t.id === todo.id)
+                      ) {
+                        setRemoveLoading(true);
+                        removeTodoMutation.mutate(todo.id);
+                      }
                     }}
                     icon={faTrashCan}
-                    className="ml-[10px] cursor-pointer p-2 rounded-full bg-gray-200 hover:bg-red-500 transition-colors duration-200 text-gray-700 hover:text-white"
+                    className={`ml-[10px] cursor-pointer p-2 rounded-full bg-gray-200 hover:bg-red-500 transition-colors duration-200 text-gray-700 hover:text-white ${
+                      removeTodoMutation.isPending ||
+                      removeLoading ||
+                      !todos.length ||
+                      !todos.some((t) => t.id === todo.id)
+                        ? 'opacity-50 cursor-not-allowed'
+                        : ''
+                    }`}
                   />
+                )}
+                {removeTodoMutation.isError && (
+                  <span className="text-red-500">Error removing todo</span>
                 )}
               </div>
             </li>
