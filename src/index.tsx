@@ -4,8 +4,8 @@ import './style.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
 
-import { useTodo } from './useTodo';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import TodoManager from './todoManager';
 
 interface Todo {
   id: number;
@@ -13,12 +13,16 @@ interface Todo {
   done: boolean;
 }
 
+interface MutationContext {
+  previousTodos?: Todo[];
+}
+
 const App = () => {
-  const { addTodo, removeTodo, toggleDone, getTodos, input, setInput } =
-    useTodo();
+  const todoManager = new TodoManager();
   const queryClient = useQueryClient();
 
-  const [removeLoading, setRemoveLoading] = useState(false);
+  const [input, setInput] = useState<string>('');
+  const [deletingTodoId, setDeletingTodoId] = useState<number | null>(null);
 
   const handleAddTodo = () => {
     if (!input.trim()) return;
@@ -40,13 +44,42 @@ const App = () => {
     };
   }, [handleAddTodo]);
 
-  const addTodoMutation = useMutation<Todo, Error, string>({
-    mutationFn: addTodo,
+  const addTodoMutation = useMutation<Todo, Error, string, MutationContext>({
+    mutationFn: (text: string) => todoManager.addTodo(text),
+
+    onMutate: async (text: string) => {
+      await queryClient.cancelQueries({ queryKey });
+
+      const previousTodos = queryClient.getQueryData<Todo[]>(queryKey);
+
+      const newTodo: Todo = {
+        id: Date.now(),
+        text,
+        done: false,
+      };
+
+      queryClient.setQueryData<Todo[]>(queryKey, (oldTodos) => [
+        ...(oldTodos || []),
+        newTodo,
+      ]);
+
+      console.log('previousTodos: ', previousTodos);
+
+      return { previousTodos };
+    },
+
+    onError: (error, text, context) => {
+      if (context?.previousTodos) {
+        queryClient.setQueryData(queryKey, context.previousTodos);
+      }
+      console.error('Error adding todo:', error);
+    },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
     },
-    onError: (error) => {
-      console.error('Error adding todo:', error);
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
     },
   });
 
@@ -57,30 +90,68 @@ const App = () => {
     isPending: isTodosLoading,
     isError: isTodosError,
     error: todosError,
-  } = useQuery({
-    queryFn: () => getTodos(),
+  } = useQuery<Todo[]>({
+    queryFn: () => todoManager.fetchTodos(),
     queryKey,
   });
 
-  const toggleTodoMutation = useMutation<void, Error, number>({
-    mutationFn: (id) => toggleDone(id),
+  const toggleTodoMutation = useMutation<void, Error, number, MutationContext>({
+    mutationFn: async (id: number) => {
+      const todo = todos?.find((t) => t.id === id);
+      if (todo) {
+        await todoManager.updateTodo(id, !todo.done);
+      }
+    },
+    onMutate: async (id: number) => {
+      await queryClient.cancelQueries({ queryKey });
+
+      const previousTodos = queryClient.getQueryData<Todo[]>(queryKey);
+
+      queryClient.setQueryData<Todo[]>(queryKey, (oldTodos) =>
+        oldTodos?.map((todo) =>
+          todo.id === id ? { ...todo, done: !todo.done } : todo
+        )
+      );
+
+      return { previousTodos };
+    },
+    onError: (error, id, context) => {
+      if (context?.previousTodos) {
+        queryClient.setQueryData(queryKey, context.previousTodos);
+      }
+      console.error('Error toggling todo:', error);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
-    },
-    onError: (error) => {
-      console.error('Error toggling todo:', error);
     },
   });
 
-  const removeTodoMutation = useMutation<void, Error, number>({
-    mutationFn: (id) => removeTodo(id),
+  const removeTodoMutation = useMutation<void, Error, number, MutationContext>({
+    mutationFn: async (id: number) => {
+      await todoManager.removeTodo(id);
+    },
+    onMutate: async (id: number) => {
+      await queryClient.cancelQueries({ queryKey });
+
+      const previousTodos = queryClient.getQueryData<Todo[]>(queryKey);
+
+      queryClient.setQueryData<Todo[]>(queryKey, (oldTodos) =>
+        oldTodos?.filter((todo) => todo.id !== id)
+      );
+
+      return { previousTodos };
+    },
+    onError: (error, id, context) => {
+      if (context?.previousTodos) {
+        queryClient.setQueryData(queryKey, context.previousTodos);
+      }
+      console.error('Error removing todo:', error);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
-      setRemoveLoading(false);
     },
-    onError: (error) => {
-      console.error('Error removing todo:', error);
-      setRemoveLoading(false);
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
     },
   });
 
@@ -104,7 +175,7 @@ const App = () => {
           }`}
           disabled={isTodosLoading || input.length === 0}
         >
-          {addTodoMutation.isPending === true ? 'Adding' : 'Add'}
+          {addTodoMutation.isPending ? 'Adding' : 'Add'}
         </button>
       </div>
 
@@ -130,7 +201,7 @@ const App = () => {
             >
               {todo.text}
               <div className="flex items-center">
-                {removeLoading ? (
+                {deletingTodoId === todo.id ? (
                   <span className="text-red-500">Deleting...</span>
                 ) : (
                   <FontAwesomeIcon
@@ -140,14 +211,18 @@ const App = () => {
                         !removeTodoMutation.isPending &&
                         todos.some((t) => t.id === todo.id)
                       ) {
-                        setRemoveLoading(true);
-                        removeTodoMutation.mutate(todo.id);
+                        setDeletingTodoId(todo.id);
+                        removeTodoMutation.mutate(todo.id, {
+                          onSettled: () => {
+                            setDeletingTodoId(null);
+                          },
+                        });
                       }
                     }}
                     icon={faTrashCan}
                     className={`ml-[10px] cursor-pointer p-2 rounded-full bg-gray-200 hover:bg-red-500 transition-colors duration-200 text-gray-700 hover:text-white ${
                       removeTodoMutation.isPending ||
-                      removeLoading ||
+                      deletingTodoId === todo.id ||
                       !todos.length ||
                       !todos.some((t) => t.id === todo.id)
                         ? 'opacity-50 cursor-not-allowed'
@@ -155,6 +230,7 @@ const App = () => {
                     }`}
                   />
                 )}
+
                 {removeTodoMutation.isError && (
                   <span className="text-red-500">Error removing todo</span>
                 )}
