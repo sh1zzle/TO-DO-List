@@ -52,10 +52,14 @@ export default class TodoManager {
 
   async updateTodo(id: number, done: boolean): Promise<void> {
     const todoIndex = this.todos.findIndex((todo) => todo.id === id);
-    if (todoIndex !== -1) {
-      this.todos[todoIndex].done = done;
-      this.saveTodosToStorage();
+
+    if (todoIndex === -1) {
+      throw new Error(`Todo with ID ${id} not found.`);
     }
+
+    await this.sleep(1000); // Simulate a delay
+    this.todos[todoIndex].done = done;
+    this.saveTodosToStorage();
   }
 
   public async addTodo(text: string): Promise<Todo> {

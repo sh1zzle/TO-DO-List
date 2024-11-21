@@ -63,8 +63,6 @@ const App = () => {
         newTodo,
       ]);
 
-      console.log('previousTodos: ', previousTodos);
-
       return { previousTodos };
     },
 
@@ -166,7 +164,6 @@ const App = () => {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Enter a new task"
           className="p-[10px] text-base rounded-[5px] border border-gray-300 w-[70%] mr-[10px] outline-none transition-colors duration-200 focus:border-blue-500"
-          disabled={addTodoMutation.isPending}
         />
         <button
           onClick={handleAddTodo}
@@ -175,7 +172,7 @@ const App = () => {
           }`}
           disabled={isTodosLoading || input.length === 0}
         >
-          {addTodoMutation.isPending ? 'Adding' : 'Add'}
+          Add
         </button>
       </div>
 
@@ -220,14 +217,7 @@ const App = () => {
                       }
                     }}
                     icon={faTrashCan}
-                    className={`ml-[10px] cursor-pointer p-2 rounded-full bg-gray-200 hover:bg-red-500 transition-colors duration-200 text-gray-700 hover:text-white ${
-                      removeTodoMutation.isPending ||
-                      deletingTodoId === todo.id ||
-                      !todos.length ||
-                      !todos.some((t) => t.id === todo.id)
-                        ? 'opacity-50 cursor-not-allowed'
-                        : ''
-                    }`}
+                    className="ml-[10px] cursor-pointer p-2 rounded-full bg-gray-200 hover:bg-red-500 transition-colors duration-200 text-gray-700 hover:text-white"
                   />
                 )}
 
