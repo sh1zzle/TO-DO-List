@@ -76,4 +76,28 @@ export default class TodoManager {
 
     return newTodo;
   }
+
+  public async editTodo(updatedTodo: Todo): Promise<Todo> {
+    await this.sleep(1000);
+
+    // Validate that the updated text is not empty
+    if (!updatedTodo.text.trim()) {
+      throw new Error('Todo text cannot be empty');
+    }
+
+    // Find the todo in the list by ID and update it
+    const index = this.todos.findIndex((todo) => todo.id === updatedTodo.id);
+
+    if (index === -1) {
+      throw new Error('Todo not found');
+    }
+
+    // Update the todo
+    this.todos[index] = { ...this.todos[index], ...updatedTodo };
+
+    // Save the updated todos to storage
+    this.saveTodosToStorage();
+
+    return this.todos[index];
+  }
 }

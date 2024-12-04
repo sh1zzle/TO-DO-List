@@ -6,7 +6,10 @@ import {
   faTrashCan,
   faArrowUp,
   faArrowDown,
+  faPen,
+  faFloppyDisk,
 } from '@fortawesome/free-solid-svg-icons';
+import { faSquare, faCheckSquare } from '@fortawesome/free-regular-svg-icons';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import TodoManager from './todoManager';
@@ -28,7 +31,29 @@ const App = () => {
   const [input, setInput] = useState<string>('');
   const [deletingTodoId, setDeletingTodoId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
-  const [sortOption, setSortOption] = useState('none'); // Sort option
+  const [sortOption, setSortOption] = useState('none');
+  const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
+
+  const [editText, setEditText] = useState('');
+
+  const handleEdit = (todo: Todo) => {
+    setEditingTodoId(todo.id);
+    setEditText(todo.text);
+  };
+
+  const handleSaveEdit = (todoId: number) => {
+    const previousTodos = queryClient.getQueryData<Todo[]>(queryKey);
+    const todoToUpdate = previousTodos?.find((todo) => todo.id === todoId);
+
+    if (todoToUpdate) {
+      const updatedTodo = { ...todoToUpdate, text: editText };
+
+      updateTodoMutation.mutate(updatedTodo);
+
+      setEditingTodoId(null);
+      setEditText('');
+    }
+  };
 
   const handleAddTodo = () => {
     if (!input.trim()) return;
@@ -186,6 +211,41 @@ const App = () => {
     );
   };
 
+  const updateTodoMutation = useMutation<Todo, Error, Todo, MutationContext>({
+    mutationFn: (updatedTodo: Todo) => todoManager.editTodo(updatedTodo),
+    onMutate: async (updatedTodo: Todo) => {
+      await queryClient.cancelQueries({ queryKey });
+
+      const previousTodos = queryClient.getQueryData<Todo[]>(queryKey);
+
+      queryClient.setQueryData<Todo[]>(queryKey, (oldTodos) => {
+        return oldTodos?.map((todo) =>
+          todo.id === updatedTodo.id ? { ...todo, ...updatedTodo } : todo
+        );
+      });
+
+      return { previousTodos };
+    },
+
+    onError: (error, updatedTodo, context) => {
+      // If there was an error, revert the todos to their previous state
+      if (context?.previousTodos) {
+        queryClient.setQueryData(queryKey, context.previousTodos);
+      }
+      console.error('Error updating todo:', error);
+    },
+
+    onSuccess: () => {
+      // Invalidate the queries so they refetch the latest data
+      queryClient.invalidateQueries({ queryKey });
+    },
+
+    onSettled: () => {
+      // Invalidate queries on both success and error to ensure the cache is fresh
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
   return (
     <div className="max-w-[800px] mx-auto my-12 p-5 bg-gray-100 rounded-lg shadow-lg text-center font-sans">
       <h1 className="font-bold mb-5 text-3xl text-teal-700">My To-Do List</h1>
@@ -252,44 +312,93 @@ const App = () => {
       ) : (
         <ul>
           {sortedTodos?.map((todo) => (
-            <li
-              key={todo.id}
-              className={`flex justify-between items-center px-8 pt-[10px] cursor-pointer ${
-                todo.done ? 'line-through text-gray-500' : ''
-              }`}
-              onClick={() => {
-                toggleTodoMutation.mutate(todo.id);
-              }}
-            >
-              {todo.text}
-              <div className="flex items-center">
-                {deletingTodoId === todo.id ? (
-                  <span className="text-red-500">Deleting...</span>
-                ) : (
+            <div>
+              <li
+                key={todo.id}
+                className={`bg-white flex justify-between items-center mb-4 px-8 py-4 rounded-lg mx-8 cursor-pointer ${
+                  todo.done ? 'line-through text-gray-500' : ''
+                }`}
+                onClick={(e) => {
+                  // Prevent toggle when editing
+                  if (editingTodoId !== todo.id) {
+                    toggleTodoMutation.mutate(todo.id);
+                  }
+                }}
+              >
+                <div>
                   <FontAwesomeIcon
+                    icon={todo.done ? faCheckSquare : faSquare}
+                    className="mr-4 cursor-pointer bg-white"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (
-                        !removeTodoMutation.isPending &&
-                        sortedTodos.some((t) => t.id === todo.id)
-                      ) {
-                        setDeletingTodoId(todo.id);
-                        removeTodoMutation.mutate(todo.id, {
-                          onSettled: () => {
-                            setDeletingTodoId(null);
-                          },
-                        });
-                      }
+                      toggleTodoMutation.mutate(todo.id);
                     }}
-                    icon={faTrashCan}
-                    className="ml-[10px] cursor-pointer p-2 rounded-full bg-gray-200 hover:bg-red-500 transition-colors duration-200 text-gray-700 hover:text-white"
                   />
-                )}
-                {removeTodoMutation.isError && (
-                  <span className="text-red-500">Error removing todo</span>
-                )}
-              </div>
-            </li>
+
+                  {editingTodoId === todo.id ? (
+                    <input
+                      type="text"
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      className="px-4 py-2 border rounded-md"
+                    />
+                  ) : (
+                    <span>{todo.text}</span>
+                  )}
+                </div>
+
+                <div className="flex items-center">
+                  {deletingTodoId === todo.id ? (
+                    <span className="text-red-500">Deleting...</span>
+                  ) : (
+                    <>
+                      {/* Edit Button */}
+                      <FontAwesomeIcon
+                        icon={faPen}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(todo); // Trigger editing
+                        }}
+                        className="ml-[10px] cursor-pointer p-2 rounded-full bg-gray-200 hover:bg-yellow-500 transition-colors duration-200 text-gray-700 hover:text-white"
+                      />
+
+                      {/* Delete Button */}
+                      <FontAwesomeIcon
+                        icon={faTrashCan}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (
+                            !removeTodoMutation.isPending &&
+                            sortedTodos.some((t) => t.id === todo.id)
+                          ) {
+                            setDeletingTodoId(todo.id);
+                            removeTodoMutation.mutate(todo.id, {
+                              onSettled: () => {
+                                setDeletingTodoId(null);
+                              },
+                            });
+                          }
+                        }}
+                        className="ml-[10px] cursor-pointer p-2 rounded-full bg-gray-200 hover:bg-red-500 transition-colors duration-200 text-gray-700 hover:text-white"
+                      />
+                    </>
+                  )}
+
+                  {removeTodoMutation.isError && (
+                    <span className="text-red-500">Error removing todo</span>
+                  )}
+
+                  {editingTodoId === todo.id && (
+                    <button
+                      onClick={() => handleSaveEdit(todo.id)}
+                      className="ml-[10px] cursor-pointer px-[9px] py-[5px] rounded-full bg-gray-200 hover:bg-green-500 transition-colors duration-200 text-gray-700 hover:text-white"
+                    >
+                      <FontAwesomeIcon icon={faFloppyDisk} />
+                    </button>
+                  )}
+                </div>
+              </li>
+            </div>
           ))}
         </ul>
       )}
