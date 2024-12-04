@@ -187,26 +187,58 @@ const App = () => {
   };
 
   return (
-    <div className="max-w-[500px] mx-auto my-12 p-5 bg-gray-100 rounded-lg shadow-lg text-center font-sans">
+    <div className="max-w-[800px] mx-auto my-12 p-5 bg-gray-100 rounded-lg shadow-lg text-center font-sans">
       <h1 className="font-bold mb-5 text-3xl text-teal-700">My To-Do List</h1>
 
-      <div className="flex justify-center mb-5">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Enter a new task"
-          className="p-[10px] text-base rounded-[5px] border border-gray-300 w-[70%] mr-[10px] outline-none transition-colors duration-200 focus:border-blue-500"
-        />
-        <button
-          onClick={handleAddTodo}
-          className={`px-5 py-2.5 text-white border-none rounded-[5px] cursor-pointer text-base transition-colors duration-200 ${
-            input.length > 0 ? 'bg-[#0056b3]' : 'bg-gray-300'
-          }`}
-          disabled={isTodosLoading || input.length === 0}
-        >
-          Add
-        </button>
+      <div className="flex justify-between items-center mb-5 px-8">
+        <div className="w-[70%] flex">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Enter a new task"
+            className="p-[10px] text-base rounded-[5px] border border-gray-300 mr-[10px] outline-none transition-colors duration-200 focus:border-blue-500 w-[70%]"
+          />
+          <button
+            onClick={handleAddTodo}
+            className={`w-[20%] px-5 py-2.5 text-white border-none rounded-[5px] cursor-pointer text-base transition-colors duration-200 ${
+              input.length > 0 ? 'bg-[#0056b3]' : 'bg-gray-300'
+            }`}
+            disabled={isTodosLoading || input.length === 0}
+          >
+            Add
+          </button>
+        </div>
+
+        <div className="flex gap-2 justify-end items-center w-[30%]">
+          <div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="py-2 px-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-gray-300"
+            >
+              <option value="all">All</option>
+              <option value="done">Completed</option>
+              <option value="pending">Pending</option>
+            </select>
+          </div>
+          <div>
+            <button
+              onClick={toggleSortOrder}
+              className="px-4 py-2 border rounded-md flex items-center justify-center  focus:ring-1 focus:ring-gray-300"
+            >
+              {sortOption === 'alphabetical' ? (
+                <>
+                  <FontAwesomeIcon icon={faArrowUp} />
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faArrowDown} />
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
 
       {isTodosError && (
@@ -214,36 +246,6 @@ const App = () => {
           Error loading todos: {todosError?.message}
         </div>
       )}
-
-      <div className="flex justify-between items-center px-[30px]">
-        <div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-10 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-gray-300"
-          >
-            <option value="all">All</option>
-            <option value="done">Completed</option>
-            <option value="pending">Pending</option>
-          </select>
-        </div>
-        <div>
-          <button
-            onClick={toggleSortOrder}
-            className="px-4 py-2 border rounded-md flex items-center justify-center  focus:ring-1 focus:ring-gray-300"
-          >
-            {sortOption === 'alphabetical' ? (
-              <>
-                <FontAwesomeIcon icon={faArrowUp} />
-              </>
-            ) : (
-              <>
-                <FontAwesomeIcon icon={faArrowDown} />
-              </>
-            )}
-          </button>
-        </div>
-      </div>
 
       {isTodosLoading ? (
         <div>Loading todos...</div>
