@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Select from 'react-select';
 import './style.css';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -35,6 +36,12 @@ const App = () => {
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
 
   const [editText, setEditText] = useState('');
+
+  const statusOptions = [
+    { value: 'all', label: 'All' },
+    { value: 'done', label: 'Completed' },
+    { value: 'pending', label: 'Pending' },
+  ];
 
   const handleEdit = (todo: Todo) => {
     setEditingTodoId(todo.id);
@@ -198,9 +205,9 @@ const App = () => {
 
   const sortedTodos = filteredTodos?.sort((a, b) => {
     if (sortOption === 'alphabetical') {
-      return a.text.localeCompare(b.text); // A-Z
+      return a.text.localeCompare(b.text);
     } else if (sortOption === 'reverse-alphabetical') {
-      return b.text.localeCompare(a.text); // Z-A
+      return b.text.localeCompare(a.text);
     }
     return 0;
   });
@@ -228,7 +235,6 @@ const App = () => {
     },
 
     onError: (error, updatedTodo, context) => {
-      // If there was an error, revert the todos to their previous state
       if (context?.previousTodos) {
         queryClient.setQueryData(queryKey, context.previousTodos);
       }
@@ -236,12 +242,10 @@ const App = () => {
     },
 
     onSuccess: () => {
-      // Invalidate the queries so they refetch the latest data
       queryClient.invalidateQueries({ queryKey });
     },
 
     onSettled: () => {
-      // Invalidate queries on both success and error to ensure the cache is fresh
       queryClient.invalidateQueries({ queryKey });
     },
   });
@@ -272,15 +276,42 @@ const App = () => {
 
         <div className="flex gap-2 justify-end items-center w-[30%]">
           <div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="py-2 px-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-gray-300"
-            >
-              <option value="all">All</option>
-              <option value="done">Completed</option>
-              <option value="pending">Pending</option>
-            </select>
+            <Select
+              value={statusOptions.find(
+                (option) => option.value === statusFilter
+              )}
+              onChange={(selectedOption) =>
+                setStatusFilter(selectedOption?.value || 'all')
+              }
+              options={statusOptions}
+              styles={{
+                container: (provided) => ({
+                  ...provided,
+                  width: '140px',
+                }),
+                control: (provided, state) => ({
+                  ...provided,
+                  minHeight: '36px',
+                  outline: 'none',
+                  boxShadow: 'none',
+                  borderColor: state.isFocused
+                    ? '#d1d5db'
+                    : provided.borderColor,
+                  '&:hover': {
+                    borderColor: '#d1d5db',
+                  },
+                }),
+                menu: (provided) => ({
+                  ...provided,
+                  backgroundColor: '#f3f4f6',
+                }),
+                option: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: state.isFocused ? '#e5e7eb' : '#f3f4f6',
+                  color: state.isSelected ? '#000' : '#333',
+                }),
+              }}
+            />
           </div>
           <div>
             <button
@@ -318,8 +349,7 @@ const App = () => {
                 className={`bg-white flex justify-between items-center mb-4 px-8 py-4 rounded-lg mx-8 cursor-pointer ${
                   todo.done ? 'line-through text-gray-500' : ''
                 }`}
-                onClick={(e) => {
-                  // Prevent toggle when editing
+                onClick={() => {
                   if (editingTodoId !== todo.id) {
                     toggleTodoMutation.mutate(todo.id);
                   }
@@ -352,17 +382,15 @@ const App = () => {
                     <span className="text-red-500">Deleting...</span>
                   ) : (
                     <>
-                      {/* Edit Button */}
                       <FontAwesomeIcon
                         icon={faPen}
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleEdit(todo); // Trigger editing
+                          handleEdit(todo);
                         }}
                         className="ml-[10px] cursor-pointer p-2 rounded-full bg-gray-200 hover:bg-yellow-500 transition-colors duration-200 text-gray-700 hover:text-white"
                       />
 
-                      {/* Delete Button */}
                       <FontAwesomeIcon
                         icon={faTrashCan}
                         onClick={(e) => {
