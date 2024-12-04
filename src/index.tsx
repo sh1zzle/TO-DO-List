@@ -23,6 +23,7 @@ const App = () => {
 
   const [input, setInput] = useState<string>('');
   const [deletingTodoId, setDeletingTodoId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const handleAddTodo = () => {
     if (!input.trim()) return;
@@ -96,6 +97,7 @@ const App = () => {
   const toggleTodoMutation = useMutation<void, Error, number, MutationContext>({
     mutationFn: async (id: number) => {
       const todo = todos?.find((t) => t.id === id);
+      console.log('todo: ', todo);
       if (todo) {
         await todoManager.updateTodo(id, !todo.done);
       }
@@ -153,6 +155,17 @@ const App = () => {
     },
   });
 
+  const previousTodos = queryClient.getQueryData<Todo[]>(queryKey);
+  console.log('previousTodos: ', previousTodos);
+
+  const filteredTodos = previousTodos?.filter((todo) => {
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'done') return todo.done;
+    if (statusFilter === 'pending') return !todo.done;
+
+    return false;
+  });
+
   return (
     <div className="max-w-[500px] mx-auto my-12 p-5 bg-gray-100 rounded-lg shadow-lg text-center font-sans">
       <h1 className="font-bold mb-5 text-3xl text-teal-700">My To-Do List</h1>
@@ -182,11 +195,23 @@ const App = () => {
         </div>
       )}
 
+      <div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="all">All</option>
+          <option value="done">Completed</option>
+          <option value="pending">Pending</option>
+        </select>
+      </div>
+
       {isTodosLoading ? (
         <div>Loading todos...</div>
       ) : (
-        <ul className="list-none p-0 flex flex-col">
-          {todos?.map((todo) => (
+        <ul>
+          {filteredTodos?.map((todo) => (
             <li
               key={todo.id}
               className={`flex justify-between items-center pl-[50px] pr-[50px] pt-[10px] cursor-pointer ${
@@ -206,7 +231,7 @@ const App = () => {
                       e.stopPropagation();
                       if (
                         !removeTodoMutation.isPending &&
-                        todos.some((t) => t.id === todo.id)
+                        filteredTodos.some((t) => t.id === todo.id)
                       ) {
                         setDeletingTodoId(todo.id);
                         removeTodoMutation.mutate(todo.id, {
@@ -220,7 +245,6 @@ const App = () => {
                     className="ml-[10px] cursor-pointer p-2 rounded-full bg-gray-200 hover:bg-red-500 transition-colors duration-200 text-gray-700 hover:text-white"
                   />
                 )}
-
                 {removeTodoMutation.isError && (
                   <span className="text-red-500">Error removing todo</span>
                 )}
