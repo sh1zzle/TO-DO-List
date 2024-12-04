@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 import './style.css';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import {
+  faTrashCan,
+  faArrowUp,
+  faArrowDown,
+} from '@fortawesome/free-solid-svg-icons';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import TodoManager from './todoManager';
@@ -24,6 +28,7 @@ const App = () => {
   const [input, setInput] = useState<string>('');
   const [deletingTodoId, setDeletingTodoId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sortOption, setSortOption] = useState('none'); // Sort option
 
   const handleAddTodo = () => {
     if (!input.trim()) return;
@@ -166,6 +171,21 @@ const App = () => {
     return false;
   });
 
+  const sortedTodos = filteredTodos?.sort((a, b) => {
+    if (sortOption === 'alphabetical') {
+      return a.text.localeCompare(b.text); // A-Z
+    } else if (sortOption === 'reverse-alphabetical') {
+      return b.text.localeCompare(a.text); // Z-A
+    }
+    return 0;
+  });
+
+  const toggleSortOrder = () => {
+    setSortOption((prev) =>
+      prev === 'alphabetical' ? 'reverse-alphabetical' : 'alphabetical'
+    );
+  };
+
   return (
     <div className="max-w-[500px] mx-auto my-12 p-5 bg-gray-100 rounded-lg shadow-lg text-center font-sans">
       <h1 className="font-bold mb-5 text-3xl text-teal-700">My To-Do List</h1>
@@ -195,26 +215,44 @@ const App = () => {
         </div>
       )}
 
-      <div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">All</option>
-          <option value="done">Completed</option>
-          <option value="pending">Pending</option>
-        </select>
+      <div className="flex justify-between items-center px-[30px]">
+        <div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-10 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-gray-300"
+          >
+            <option value="all">All</option>
+            <option value="done">Completed</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+        <div>
+          <button
+            onClick={toggleSortOrder}
+            className="px-4 py-2 border rounded-md flex items-center justify-center  focus:ring-1 focus:ring-gray-300"
+          >
+            {sortOption === 'alphabetical' ? (
+              <>
+                <FontAwesomeIcon icon={faArrowUp} />
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faArrowDown} />
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {isTodosLoading ? (
         <div>Loading todos...</div>
       ) : (
         <ul>
-          {filteredTodos?.map((todo) => (
+          {sortedTodos?.map((todo) => (
             <li
               key={todo.id}
-              className={`flex justify-between items-center pl-[50px] pr-[50px] pt-[10px] cursor-pointer ${
+              className={`flex justify-between items-center px-8 pt-[10px] cursor-pointer ${
                 todo.done ? 'line-through text-gray-500' : ''
               }`}
               onClick={() => {
@@ -231,7 +269,7 @@ const App = () => {
                       e.stopPropagation();
                       if (
                         !removeTodoMutation.isPending &&
-                        filteredTodos.some((t) => t.id === todo.id)
+                        sortedTodos.some((t) => t.id === todo.id)
                       ) {
                         setDeletingTodoId(todo.id);
                         removeTodoMutation.mutate(todo.id, {
