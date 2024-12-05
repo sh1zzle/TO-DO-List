@@ -32,16 +32,16 @@ enum SortOption {
   ReverseAlphabetical = 'reverse-alphabetical',
 }
 
-enum statusOptions {
+enum StatusOptions {
   All = 'all',
   Done = 'done',
   Pending = 'pending',
 }
 
-const statusOptionsArray: { value: statusOptions; label: string }[] = [
-  { value: statusOptions.All, label: 'All' },
-  { value: statusOptions.Done, label: 'Completed' },
-  { value: statusOptions.Pending, label: 'Pending' },
+const statusOptionsArray: { value: StatusOptions; label: string }[] = [
+  { value: StatusOptions.All, label: 'All' },
+  { value: StatusOptions.Done, label: 'Completed' },
+  { value: StatusOptions.Pending, label: 'Pending' },
 ];
 
 const App = () => {
@@ -50,8 +50,8 @@ const App = () => {
 
   const [input, setInput] = useState<string>('');
   const [deletingTodoId, setDeletingTodoId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<statusOptions>(
-    statusOptions.All
+  const [statusFilter, setStatusFilter] = useState<StatusOptions>(
+    StatusOptions.All
   );
   const [sortOption, setSortOption] = useState<SortOption>(SortOption.None);
   const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
@@ -211,11 +211,11 @@ const App = () => {
 
   const filteredTodos = previousTodos?.filter((todo) => {
     switch (statusFilter) {
-      case statusOptions.All:
+      case StatusOptions.All:
         return true;
-      case statusOptions.Done:
+      case StatusOptions.Done:
         return todo.done;
-      case statusOptions.Pending:
+      case StatusOptions.Pending:
         return !todo.done;
       default:
         throw new Error(`Unexpected statusFilter value: ${statusFilter}`);
@@ -223,11 +223,11 @@ const App = () => {
   });
   const sortedTodos = [...(filteredTodos ?? [])].sort((a, b) => {
     switch (sortOption) {
-      case 'alphabetical':
+      case SortOption.Alphabetical:
         return a.text.localeCompare(b.text);
-      case 'reverse-alphabetical':
+      case SortOption.ReverseAlphabetical:
         return b.text.localeCompare(a.text);
-      case 'none':
+      case SortOption.None:
         return 0;
       default:
         console.error(`Unexpected sortOption value: ${sortOption}`);
@@ -306,7 +306,7 @@ const App = () => {
                 (option) => option.value === statusFilter
               )}
               onChange={(selectedOption) =>
-                setStatusFilter(selectedOption?.value || statusOptions.All)
+                setStatusFilter(selectedOption?.value || StatusOptions.All)
               }
               options={statusOptionsArray}
               styles={{
@@ -343,7 +343,7 @@ const App = () => {
               onClick={toggleSortOrder}
               className="px-4 py-2 border rounded-md flex items-center justify-center  focus:ring-1 focus:ring-gray-300"
             >
-              {sortOption === 'alphabetical' ? (
+              {sortOption === SortOption.Alphabetical ? (
                 <>
                   <FontAwesomeIcon icon={faArrowUp} />
                 </>
